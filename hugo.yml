@@ -36,11 +36,13 @@ tasks:
       # Already serving on this port? Treat as success so re-running is a no-op.
       - curl -s -o /dev/null "http://localhost:{{.HUGO_PORT}}/"
     cmds:
+      # Detach via `bash -c '... & disown'`: Task's embedded shell (mvdan/sh)
+      # reaps plain background jobs on exit and has no `disown` builtin, so the
+      # server would die with the task. Real bash decouples it so it survives.
       - |
         drafts=""
         [ "{{.HUGO_DRAFTS}}" = "true" ] && drafts="-D"
-        nohup {{.HUGO}} server $drafts --bind {{.HUGO_BIND}} --port {{.HUGO_PORT}} \
-          > "{{.HUGO_LOG}}" 2>&1 & disown
+        bash -c "nohup {{.HUGO}} server $drafts --bind {{.HUGO_BIND}} --port {{.HUGO_PORT}} > '{{.HUGO_LOG}}' 2>&1 & disown"
         echo "Hugo starting on http://{{.HUGO_BIND}}:{{.HUGO_PORT}}/ (logs: {{.HUGO_LOG}})"
 
   stop:
