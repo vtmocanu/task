@@ -1,0 +1,12 @@
+# IDEs
+.cursor
+.vscode
+# Python
+__pycache__/
+*.pyc
+# Env files
+.env
+# Claude
+.claude/agent-team-tasks/
+.claude/scheduled_tasks.lock
+.claude/skill-stats.json

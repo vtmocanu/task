@@ -1,0 +1,73 @@
+---
+# hugo.yml - Hugo static-site dev server lifecycle (start / stop / restart / build).
+#
+# A reusable Taskfile. A consumer repo includes it and overrides vars:
+#
+#   includes:
+#     hugo:
+#       taskfile: "{{if .CI}}https://raw.githubusercontent.com/vtmocanu/task/main/hugo.yml{{else}}~/stuff/gitrepos/gh/vtmocanu/task/hugo.yml{{end}}"
+#       vars:
+#         HUGO: "devbox run hugo"      # wrap hugo if it is not on PATH
+#         HUGO_LOG: "/tmp/my-site.log"
+#
+# Then: task hugo:start | hugo:stop | hugo:restart | hugo:build | hugo:status
+#
+# Every var has a default; nothing here references any private host or path.
+
+version: "3"
+
+vars:
+  HUGO: '{{.HUGO | default "hugo"}}'                  # base command (e.g. "devbox run hugo")
+  HUGO_BIND: '{{.HUGO_BIND | default "0.0.0.0"}}'     # interface to bind
+  HUGO_PORT: '{{.HUGO_PORT | default "1313"}}'        # dev server port
+  HUGO_DRAFTS: '{{.HUGO_DRAFTS | default "true"}}'    # include drafts (-D)
+  HUGO_LOG: '{{.HUGO_LOG | default "/tmp/hugo-server.log"}}'
+  HUGO_BUILD_ARGS: '{{.HUGO_BUILD_ARGS | default "--minify"}}'
+
+tasks:
+  default:
+    desc: "List available Hugo tasks"
+    cmds:
+      - task --list
+
+  start:
+    desc: "Start the Hugo dev server detached (survives the shell). Idempotent."
+    status:
+      # Already serving on this port? Treat as success so re-running is a no-op.
+      - curl -s -o /dev/null "http://localhost:{{.HUGO_PORT}}/"
+    cmds:
+      - |
+        drafts=""
+        [ "{{.HUGO_DRAFTS}}" = "true" ] && drafts="-D"
+        nohup {{.HUGO}} server $drafts --bind {{.HUGO_BIND}} --port {{.HUGO_PORT}} \
+          > "{{.HUGO_LOG}}" 2>&1 & disown
+        echo "Hugo starting on http://{{.HUGO_BIND}}:{{.HUGO_PORT}}/ (logs: {{.HUGO_LOG}})"
+
+  stop:
+    desc: "Stop the detached Hugo dev server"
+    cmds:
+      - pkill -f 'hugo server' || echo "No 'hugo server' process found"
+
+  restart:
+    desc: "Restart the Hugo dev server"
+    cmds:
+      - task: stop
+      - sleep 1
+      - task: start
+
+  build:
+    desc: "Production build (defaults to: hugo --minify)"
+    cmds:
+      - "{{.HUGO}} {{.HUGO_BUILD_ARGS}}"
+
+  status:
+    desc: "Report whether the Hugo dev server is responding"
+    cmds:
+      - |
+        code="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:{{.HUGO_PORT}}/" || true)"
+        if [ "$code" = "200" ]; then
+          echo "up: http://localhost:{{.HUGO_PORT}}/ ($code)"
+        else
+          echo "down: no 200 from http://localhost:{{.HUGO_PORT}}/ (got '$code')"
+          exit 1
+        fi
