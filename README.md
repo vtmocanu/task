@@ -13,6 +13,7 @@ repo includes and overrides with its own variables.
 |------|-------|---------|
 | [`hugo.yml`](hugo.yml) | `start` `stop` `restart` `build` `status` | Hugo static-site dev server lifecycle |
 | [`homebrew-tap.yml`](homebrew-tap.yml) | `formula` `publish` | Render a Homebrew formula from a template and push it to a tap |
+| [`shell.yml`](shell.yml) | `syntax` `lint` `check` | Shell script validation: `bash -n` + shellcheck |
 
 ## Usage
 
@@ -76,6 +77,28 @@ includes:
 ```bash
 task brew:formula VERSION=v1.2.3                            # render dist/my-tool.rb
 task brew:publish VERSION=v1.2.3 HOMEBREW_TAP_TOKEN=<pat>   # push to the tap
+```
+
+### shell.yml
+
+Shell script validation. `SCRIPTS` is a space-separated list of paths relative
+to the consumer's root Taskfile dir; when omitted, all `*.sh` files are
+discovered recursively (skipping `.git` and `.devbox`). Severity and extra
+shellcheck flags are overridable (`SHELLCHECK_SEVERITY`, default `warning`;
+`SHELLCHECK_FLAGS`, default `-x`).
+
+```yaml
+includes:
+  shell:
+    taskfile: "{{if .CI}}{{.TASK_REPO_RAW}}/shell.yml{{else}}{{.TASK_REPO_LOCAL}}/shell.yml{{end}}"
+    vars:
+      SCRIPTS: my-tool.sh scripts/helper.sh
+```
+
+```bash
+task shell:syntax   # bash -n on every script
+task shell:lint     # shellcheck on every script
+task shell:check    # both
 ```
 
 ## Conventions
