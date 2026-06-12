@@ -1,4 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"]
+  "extends": [
+    "config:recommended",
+    "https://git.wxs.ro/api/v1/repos/renovate/renovate-config/raw/wxs-groups.json?ref=main",
+    "https://git.wxs.ro/api/v1/repos/renovate/renovate-config/raw/wxs-regex.json?ref=main"
+  ]
 }
