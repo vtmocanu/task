@@ -88,6 +88,11 @@ tasks:
 
   publish:
     desc: "Clone the tap, copy the rendered formula, commit and push"
+    # silent: Task echoes each command before running it, and the git clone URL
+    # embeds HOMEBREW_TAP_TOKEN. GitHub Actions' secret masking should redact
+    # it, but a public repo's CI log must not rely on masking alone; suppress
+    # the echo entirely. The script's own echo lines still print.
+    silent: true
     requires:
       vars: [VERSION, NAME, TAP_REPO, HOMEBREW_TAP_TOKEN]
     vars:
